@@ -23,6 +23,8 @@ Not recommended: For updating the submodules to the up-to-date commits run:
 git submodule update --remote --merge
 ```
 
-2. Install PyRep as in its README file: `backend/PyRep/README.md` [link](backend/PyRep/README.md)
+2. Install (download and extract) CoppeliaSim (V-REP) 4.1.0 version: https://www.coppeliarobotics.com/previousVersions
 
-3. Install RLBench as in its README file: `backend/RLBench/README.md` [link](backend/RLBench/README.md)
+3. Install PyRep as in its README file: `backend/PyRep/README.md` [link](backend/PyRep/README.md)
+
+4. Install RLBench as in its README file: `backend/RLBench/README.md` [link](backend/RLBench/README.md)
