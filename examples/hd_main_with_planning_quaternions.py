@@ -9,7 +9,7 @@ from pyrep.const import RenderMode
 
 from rlbench.environment import Environment
 from rlbench.action_modes.action_mode import ActionMode, MoveArmThenGripper
-from rlbench.action_modes.arm_action_modes import ArmActionMode, JointPosition, EndEffectorPoseViaPlanning
+from rlbench.action_modes.arm_action_modes import ArmActionMode, JointPosition, EndEffectorPoseViaPlanning, EndEffectorPoseViaIK
 from rlbench.action_modes.gripper_action_modes import GripperActionMode, Discrete
 
 from rlbench.task_environment import TaskEnvironment
@@ -36,10 +36,12 @@ obs_config.front_camera = cam_config
 
 #arm_action_mode = ArmActionMode()
 #joint_action_mode = JointPosition()
-joint_action_mode = EndEffectorPoseViaPlanning()
+#arm_action_mode = EndEffectorPoseViaPlanning(frame = 'end effector')
+arm_action_mode = EndEffectorPoseViaPlanning()
+#arm_action_mode = EndEffectorPoseViaIK()
 gripper_action_mode = Discrete()
 
-act_mode = MoveArmThenGripper(joint_action_mode,gripper_action_mode)
+act_mode = MoveArmThenGripper(arm_action_mode,gripper_action_mode)
 
 env = Environment(action_mode = act_mode, obs_config= obs_config,robot_setup = 'ur3baxter')
 
@@ -54,37 +56,43 @@ print(task_env.get_name())
 task_env.reset()
 obs_init = task_env.get_observation().get_low_dim_data()
 
-task_env.reset()
 
-print(obs_init[3:])
-print(np.linalg.norm(obs_init[3:]))
-quat = np.array([0,-0.966,0,-0.25])
-print("Quat:",quat)
-print(np.linalg.norm(quat))
-
+quat = np.random.rand(4)
 quat_norm = quat / np.linalg.norm(quat)
+#quat_norm = np.array([0,0,0,1])
 
-action = np.concatenate((obs_init[:3],quat_norm,np.array([1]))).copy()
-pos_x_list = [0.1,0.0,-0.1,0.0]
-pos_z_list = [0.0,+0.1,0.0,-0.1]
+action_list = []
+action_list.append(np.array([0.3,-0.1,1.2,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) # start
+action_list.append(np.array([0.1,-0.1,1.2,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) #
+action_list.append(np.array([0.3,-0.1,1.2,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) # end = start
 
-quat_list = []
-action_quat_list = []
+quat_obs = []
+quat_gt = []
+xyz_obs = []
+xyz_gt = []
 
 for _ in range(10):
-    for i in range (len(pos_x_list)):
-        action[0] += pos_x_list[i]
-        action[2] += pos_z_list[i]
+    for action in action_list:
+        # action[0] += pos_x_list[i]
+        # action[2] += pos_z_list[i]
+        print("#####################################")
         print(action)
         observation, reward, done, info = task_env.step(action)
+        # pose = arm_action_mode._pose_in_end_effector_frame(robot = task_env._robot, action = action[:7])
 
-        print("#####################################")
         print("x,y,z",observation.get_low_dim_data()[:3])
         print("quat",observation.get_low_dim_data()[3:])
-        quat_list.append(observation.get_low_dim_data()[3:])
-        action_quat_list.append(action[3:7])
+
+
+        xyz_obs.append(observation.get_low_dim_data()[:3].copy())
+        xyz_gt.append(action[:3].copy())
+        #quat_gt.append(pose[3:].copy())
+        quat_obs.append(observation.get_low_dim_data()[3:].copy())
+        quat_gt.append(action[3:7].copy())
 
 env.shutdown()
 
-np.save("saved_array_quat_1",np.asarray(quat_list))
-np.save("saved_array_action_quad_1",np.asarray(action_quat_list))
+np.save("np_xyz_obs",np.asarray(xyz_obs))
+np.save("np_xyz_gt",np.asarray(xyz_gt))
+np.save("np_quat_obs",np.asarray(quat_obs))
+np.save("np_quat_gt",np.asarray(quat_gt))
