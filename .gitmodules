@@ -1,3 +1,6 @@
 [submodule "backend/PyRep"]
 	path = backend/PyRep
 	url = https://github.com/telejesus2/PyRep.git
+[submodule "backend/RLBench"]
+	path = backend/RLBench
+	url = https://github.com/hdaniel0707/RLBench
