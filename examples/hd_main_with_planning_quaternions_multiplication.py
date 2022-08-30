@@ -72,11 +72,7 @@ print(obs_init)
 
 #quat = np.array([0,0,0,1]) # no rotation
 quat = np.array([1,0,0,0]) # rotate 180 deg around the x-axis
-quat_rot = np.array([0,0,0.71,0.71]) # rotate 90 deg around the z-axis
-
-# rot_quat = z_rot_deg_to_quat(10)
-# print(rot_quat)
-
+#quat_rot = np.array([0,0,0.71,0.71]) # rotate 90 deg around the z-axis
 
 quat_norm = quat / np.linalg.norm(quat)
 action = np.array([0.3,-0.1,1.0,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])
@@ -87,9 +83,6 @@ xyz_obs = []
 xyz_gt = []
 
 for _ in range(10):
-
-    # action[0] += pos_x_list[i]
-    # action[2] += pos_z_list[i]
     print("#####################################")
 
     quat_norm = quaternion_multiply(quat_norm,euler_deg_to_quat(0,0,36))
