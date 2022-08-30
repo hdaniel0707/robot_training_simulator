@@ -1,6 +1,8 @@
 [submodule "backend/PyRep"]
 	path = backend/PyRep
 	url = https://github.com/telejesus2/PyRep.git
+	update = merge # <-- this is what you need to add
 [submodule "backend/RLBench"]
 	path = backend/RLBench
 	url = https://github.com/hdaniel0707/RLBench.git
+	update = merge # <-- this is what you need to add
