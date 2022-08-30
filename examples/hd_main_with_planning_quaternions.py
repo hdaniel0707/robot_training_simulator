@@ -57,16 +57,18 @@ print(task_env.get_name())
 
 task_env.reset()
 obs_init = task_env.get_observation().get_low_dim_data()
+print(obs_init)
 
-
-quat = np.random.rand(4)
+#quat = np.random.rand(4)
+quat = np.array(obs_init[3:])
 quat_norm = quat / np.linalg.norm(quat)
-#quat_norm = np.array([0,0,0,1])
+
 
 action_list = []
 action_list.append(np.array([0.3,-0.1,1.2,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) # start
 action_list.append(np.array([0.1,-0.1,1.2,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) #
-action_list.append(np.array([0.3,-0.1,1.2,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) # end = start
+action_list.append(np.array([0.1,-0.1,1.0,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) #
+action_list.append(np.array([0.3,-0.1,1.0,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) # end = start
 
 quat_obs = []
 quat_gt = []
@@ -83,7 +85,7 @@ for _ in range(10):
         # pose = arm_action_mode._pose_in_end_effector_frame(robot = task_env._robot, action = action[:7])
 
         print("x,y,z",observation.get_low_dim_data()[:3])
-        print("quat",observation.get_low_dim_data()[3:])
+        print("quat",np.round(observation.get_low_dim_data()[3:], 2))
 
 
         xyz_obs.append(observation.get_low_dim_data()[:3].copy())
