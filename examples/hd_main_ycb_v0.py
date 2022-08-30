@@ -53,33 +53,43 @@ print(task_env.get_name())
 
 task_env.reset()
 obs_init = task_env.get_observation().get_low_dim_data()
+print(obs_init)
 
+action = np.concatenate((obs_init,np.array([1]))).copy()
+action[0] = obs_init[0] + 0.1
+action[2] = obs_init[2] - 0.1
+observation, reward, done, info = task_env.step(action)
+print(observation.get_low_dim_data())
 
-
-# Create a rotation object from Euler angles specifying axes of rotation
-rot = Rotation.from_euler('xyz', [0, 0, 0], degrees=True)
-
-# Convert to quaternions and print
-rot_quat = rot.as_quat()
-print(rot_quat)
-action0 = np.concatenate((np.array([0.20,-0.10,1.0]),rot_quat,np.array([1])))
-action0 = np.concatenate((obs_init[:3],rot_quat,np.array([1])))
-
-observation, reward, done, info = task_env.step(action0)
-
-action = action0.copy()
-
-for _ in range(10):
-    print("############################")
-    for i in range(10):
-            rot_quat2 = Rotation.from_euler('xyz', [i*60, i*15, i*45], degrees=True).as_quat()
-            print(rot_quat2)
-            action = np.concatenate((obs_init[:3],rot_quat2,np.array([1])))
-            observation, reward, done, info = task_env.step(action)
-
-            # print(observation.get_low_dim_data())
-            # print(reward)
-            # print(done)
-            # print(info)
+# # Create a rotation object from Euler angles specifying axes of rotation
+# rot = Rotation.from_euler('xyz', [0, 0, 0], degrees=True)
+#
+# # Convert to quaternions and print
+# rot_quat = rot.as_quat()
+# print(rot_quat)
+# action0 = np.concatenate((np.array([0.20,-0.10,1.0]),rot_quat,np.array([1])))
+# action0 = np.concatenate((obs_init[:3],rot_quat,np.array([1])))
+#
+# observation, reward, done, info = task_env.step(action0)
+#
+# action = action0.copy()
+#
+# pos_x_list = [0.1,0.1,-0.1,-0.1]
+# pos_z_list = [-0.1,0.1,0.1,-0.1]
+#
+# for _ in range(10):
+#     print("############################")
+#     for i in range(4):
+#             # rot_quat2 = Rotation.from_euler('xyz', [i*60, i*15, i*45], degrees=True).as_quat()
+#             # print(rot_quat2)
+#             action = obs_init.copy()
+#             action[0] = obs_init[0] + pos_x_list[0]
+#             action[2] = obs_init[2] + pos_z_list[2]
+#             observation, reward, done, info = task_env.step(action)
+#
+#             # print(observation.get_low_dim_data())
+#             # print(reward)
+#             # print(done)
+#             # print(info)
 
 env.shutdown()

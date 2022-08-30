@@ -39,10 +39,12 @@ obs_config.front_camera = cam_config
 #arm_action_mode = EndEffectorPoseViaPlanning(frame = 'end effector')
 arm_action_mode = EndEffectorPoseViaPlanning()
 #arm_action_mode = EndEffectorPoseViaIK()
+#gripper_action_mode = GripperActionMode()
 gripper_action_mode = Discrete()
 
 act_mode = MoveArmThenGripper(arm_action_mode,gripper_action_mode)
 
+#env = Environment(action_mode = act_mode, obs_config= obs_config,robot_setup = 'ur5baxter2')
 env = Environment(action_mode = act_mode, obs_config= obs_config,robot_setup = 'ur3baxter')
 
 env.launch()
