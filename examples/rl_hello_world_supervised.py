@@ -22,7 +22,7 @@ import torch.optim as optim
 from torch.distributions import Categorical
 torch.manual_seed(0)
 
-from REINFORCE_Policy_dist import Policy
+from REINFORCE_Policy import Policy
 
 CURRENT_DIR = dirname(abspath(__file__))
 
@@ -101,82 +101,79 @@ def print_data(observation, reward, done, info):
     print(done)
     print(info)
 
-def action_to_action_robot(action):
-    action_np = action.clone().cpu().detach().numpy().flatten()
-    #action_np_clipped = np.clip(action_np, [0.0, -0.35, 0.752], [0.5, 0.35 , 1.252])
-    print(action)
-    action_np_clipped = np.clip(action_np, [0.1, -0.2, 0.8], [0.3, 0.2 , 0.95])
-    print(action_np_clipped)
-    return np.concatenate((action_np_clipped, quat_norm, np.array([1])))
+def get_action(target_pose):
+    return np.concatenate((target_pose, quat_norm, np.array([1])))
 
 # quat_obs = []
 # quat_gt = []
 # xyz_obs = []
 # xyz_gt = []
 
-max_t = 1
-episode_num = 2
+max_t = 100
+episode_num = 5
 
 policy = Policy().to(device)
 optimizer = optim.Adam(policy.parameters(), lr=1e-2)
 loss_fn = torch.nn.MSELoss()
 loss_list = []
 
-for _ in range(10):
+for i in range(episode_num):
+    print("#################################################################")
+    print("Episode: ",i)
+    task_env.reset()
+    observation = task_env.get_observation()
+    # action = np.array([0.3,-0.1,1.0,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])
+    # observation, reward, done, info = task_env.step(action)
+    # print_data(observation, reward, done, info)
 
-    states = []
-    actions = []
-    rewards = []
+    for j in range(max_t):
 
-    for i in range(episode_num):
-        print("#################################################################")
-        print("Episode: ",i)
-        task_env.reset()
-        observation = task_env.get_observation()
+        #imshow(torchvision.utils.make_grid(inputs))
 
-        for j in range(max_t):
+        inputs = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
+        labels = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
 
-            state = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
-            states.append(state)
+        # Zero your gradients for every batch!
+        optimizer.zero_grad()
 
-            pi = policy(state)
-            action = pi.sample()
-            actions.append(action)
-            action_robot = action_to_action_robot(action)
-            observation, reward, done, info = task_env.step(action_robot)
-            rewards.append(torch.tensor(reward,device=device))
+        # Make predictions for this batch
+        outputs = policy(inputs)
 
-            if done:
-                break
+        if j % 20 == 0:
+            action = get_action(outputs.clone().cpu().detach().numpy().flatten())
+            print(action)
+            observation, reward, done, info = task_env.step(action)
 
-    print(states)
-    print(actions)
-    print(rewards)
 
-    states = torch.stack(states)
-    actions = torch.stack(actions)
-    rewards = torch.stack(rewards)
-    rewards = rewards.view(-1,1)
-    #rewards.to(device)
+        # Compute the loss and its gradients
+        loss = loss_fn(outputs, labels)
 
-    print(states)
-    print(actions)
-    print(rewards)
+        loss.backward()
 
-    # update policy
-    pi = policy(states)
-    logprobs = pi.log_prob(actions)
-    loss = - (logprobs * rewards).mean()
+        # Adjust learning weights
+        optimizer.step()
 
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+        print(loss.item())
+        loss_list.append(loss.item())
 
-    print(loss.item())
-    loss_list.append(loss.item())
-
+        if done:
+            break
 
 print("+++++++++++++++++++++++++++++++++++++++++++++++++++")
 print(loss_list)
 
+    # print("x,y,z",observation.get_low_dim_data()[:3])
+    # print("quat",np.round(observation.get_low_dim_data()[3:], 2))
+    #
+    # xyz_obs.append(observation.get_low_dim_data()[:3].copy())
+    # xyz_gt.append(action[:3].copy())
+    # #quat_gt.append(pose[3:].copy())
+    # quat_obs.append(observation.get_low_dim_data()[3:].copy())
+    # quat_gt.append(action[3:7].copy())
+
 env.shutdown()
+
+# np.save("np_xyz_obs",np.asarray(xyz_obs))
+# np.save("np_xyz_gt",np.asarray(xyz_gt))
+# np.save("np_quat_obs",np.asarray(quat_obs))
+# np.save("np_quat_gt",np.asarray(quat_gt))
