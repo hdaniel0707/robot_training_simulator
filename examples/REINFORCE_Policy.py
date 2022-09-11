@@ -16,8 +16,12 @@ class Policy(nn.Module):
         self.fc1 = nn.Linear(state_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, action_size)
 
-        self._center = torch.tensor([0.25,0.0,1.002], dtype=torch.float32, device=device)
-        self._scale = torch.tensor([0.25,0.35,0.25], dtype=torch.float32, device=device)
+        if action_size == 3:
+            self._center = torch.tensor([0.25,0.0,1.002], dtype=torch.float32, device=device)
+            self._scale = torch.tensor([0.25,0.35,0.25], dtype=torch.float32, device=device)
+        if action_size == 2:
+            self._center = torch.tensor([0.25,0.0], dtype=torch.float32, device=device)
+            self._scale = torch.tensor([0.25,0.35], dtype=torch.float32, device=device)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
