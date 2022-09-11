@@ -106,8 +106,8 @@ def get_action(target_pose):
 ##########################
 #TRAIN
 
-max_t = 5
-episode_num = 10
+max_t = 1
+episode_num = 1000
 
 policy = Policy().to(device)
 optimizer = optim.Adam(policy.parameters(), lr=1e-2)
@@ -145,7 +145,11 @@ for i in tqdm(range(episode_num), desc ="Epochs: "):
 print("+++++++++++++++++++++++++++++++++++++++++++++++++++")
 print(loss_list)
 
-model_path = "model_checkpoints/supervised_01"
+training_name = "supervised_02"
+model_path = "model_checkpoints/" + training_name
 torch.save(policy.state_dict(), model_path)
+
+logpath = "log/" + training_name + "_train_loss"
+np.save(logpath,np.asarray(loss_list))
 
 env.shutdown()
