@@ -30,12 +30,24 @@ from REINFORCE_Policy import Policy
 
 CURRENT_DIR = dirname(abspath(__file__))
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--trainname", default="supervised_xx" ,help="Name of the training")
+parser.add_argument("--dirsave", default="model_checkpoints" ,help="Dir for saving the models")
+parser.add_argument("--dirsavelog", default="log" ,help="Dir for saving the logs")
+parser.add_argument("--episodenum", type=int, default=100 ,help="Define the number of episodes")
+parser.add_argument("--maxt", type=int, default=1 ,help="Define the horizon of an episode")
+parser.add_argument("--gpu", type=int, default=0 ,help="Define the GPU number (only one)")
+parser.add_argument("--cpumin", type=int, default=3 ,help="Define the lower value of CPU interval")
+parser.add_argument("--cpumax", type=int, default=7 ,help="Define the upper value of CPU interval")
+args = parser.parse_args()
+
 #############################################################################
 # For compute you need to define the GPU and limit the CPU usage #############
 # BEFORE IMPORTING PYTORCH
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0" # 3 GPU
-os.system("taskset -p -c 3-7 %d" % os.getpid()) #0-1-2 CPU
+os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu) # 3 GPU
+os.system("taskset -p -c "+str(args.cpumin)+"-"+str(args.cpumax)+" %d" % os.getpid()) #0-1-2 CPU
 # For defining the GPUs: 'nvidia-msi'
 # For defining the CPUs: 'top' and then press '1'
 ##############################################################################
@@ -51,6 +63,9 @@ if torch.cuda.is_available():
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
+
+
+
 cam_config = CameraConfig(rgb=True, depth=False, mask=False,
                           render_mode=RenderMode.OPENGL)
 obs_config = ObservationConfig()
@@ -64,12 +79,9 @@ obs_config.wrist_camera = cam_config
 obs_config.front_camera = cam_config
 
 
-#arm_action_mode = ArmActionMode()
-#joint_action_mode = JointPosition()
-#arm_action_mode = EndEffectorPoseViaPlanning(frame = 'end effector')
+
+
 arm_action_mode = EndEffectorPoseViaPlanning()
-#arm_action_mode = EndEffectorPoseViaIK()
-#gripper_action_mode = GripperActionMode()
 gripper_action_mode = Discrete()
 
 act_mode = MoveArmThenGripper(arm_action_mode,gripper_action_mode)
@@ -106,20 +118,16 @@ def get_action(target_pose):
 ##########################
 #TRAIN
 
-max_t = 1
-episode_num = 1000
-
 policy = Policy().to(device)
 optimizer = optim.Adam(policy.parameters(), lr=1e-2)
 loss_fn = torch.nn.MSELoss()
 loss_list = []
 
-
-for i in tqdm(range(episode_num), desc ="Epochs: "):
+for i in tqdm(range(args.episodenum), desc ="Epochs: "):
     task_env.reset()
     observation = task_env.get_observation()
 
-    for j in range(max_t):
+    for j in range(args.maxt):
 
         inputs = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
         labels = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
@@ -145,11 +153,10 @@ for i in tqdm(range(episode_num), desc ="Epochs: "):
 print("+++++++++++++++++++++++++++++++++++++++++++++++++++")
 print(loss_list)
 
-training_name = "supervised_02"
-model_path = "model_checkpoints/" + training_name
+model_path = args.dirsave + "/" + args.trainname
 torch.save(policy.state_dict(), model_path)
 
-logpath = "log/" + training_name + "_train_loss"
+logpath = args.dirsavelog + "/" + args.trainname + "_train_loss"
 np.save(logpath,np.asarray(loss_list))
 
 env.shutdown()

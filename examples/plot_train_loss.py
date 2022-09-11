@@ -1,24 +1,28 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--trainname", default="supervised_xx" ,help="Name of the training")
+parser.add_argument("--dirsavelog", default="log" ,help="Dir for saving the logs")
+args = parser.parse_args()
 
 
-training_name = "supervised_02"
-path = "log/" + training_name + "_train_loss.npy"
-training_loss= np.load(path)
+path = args.dirsavelog + "/" + args.trainname + "_train_loss.npy"
+train_loss= np.load(path)
 
 #print(training_loss)
-print("Shape:",training_loss.shape)
+print("Shape:",train_loss.shape)
 
 def movingaverage (values, window):
     weights = np.repeat(1.0, window)/window
     sma = np.convolve(values, weights, 'valid')
     return sma
 
-training_loss_mavg = movingaverage(training_loss,20)
-print("Shape:",training_loss_mavg.shape)
+train_loss_mavg = movingaverage(train_loss,20)
+print("Shape:",train_loss_mavg.shape)
 
-plt.plot(training_loss, label=training_name)
-plt.plot(training_loss_mavg, label=training_name + "_mavg")
+plt.plot(train_loss, label=args.trainname)
+plt.plot(train_loss_mavg, label=args.trainname + "_mavg")
 plt.title("Training Loss")
 plt.legend()
 #plt.savefig("xyz.png")
