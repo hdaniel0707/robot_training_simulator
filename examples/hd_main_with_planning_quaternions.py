@@ -68,6 +68,11 @@ action_list.append(np.array([0.1,-0.1,1.0,quat_norm[0],quat_norm[1],quat_norm[2]
 action_list.append(np.array([0.1,-0.1,0.8,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) #
 action_list.append(np.array([0.3,-0.1,0.8,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])) # end = start
 
+xyz_obs = []
+xyz_gt = []
+quat_obs = []
+quat_gt = []
+
 for _ in range(1):
     for action in action_list:
         print("#####################################")
