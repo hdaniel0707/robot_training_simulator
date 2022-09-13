@@ -7,21 +7,21 @@
 ## Install
 
 1. Clone the repo:
-```
-git clone --recurse-submodules https://github.com/hdaniel0707/robot_training_simulator.git
-```
-Or for inner use:
-```
-git clone --recurse-submodules git@github.com:hdaniel0707/robot_training_simulator.git
-```
-If you have already cloned without the `--recurse-submodules` tag, then run:
-```
-git submodule update --init --recursive
-```
-Not recommended: For updating the submodules to the up-to-date commits run:
-```
-git submodule update --remote --merge
-```
+  ```
+  git clone --recurse-submodules https://github.com/hdaniel0707/robot_training_simulator.git
+  ```
+  Or for inner use:
+  ```
+  git clone --recurse-submodules git@github.com:hdaniel0707/robot_training_simulator.git
+  ```
+  If you have already cloned without the `--recurse-submodules` tag, then run:
+  ```
+  git submodule update --init --recursive
+  ```
+  Not recommended: For updating the submodules to the up-to-date commits run:
+  ```
+  git submodule update --remote --merge
+  ```
 
 2. Install (download and extract) CoppeliaSim (V-REP) 4.1.0 version: https://www.coppeliarobotics.com/previousVersions
 
@@ -31,7 +31,6 @@ git submodule update --remote --merge
   - [Ubuntu 16.04](https://www.coppeliarobotics.com/files/CoppeliaSim_Edu_V4_1_0_Ubuntu16_04.tar.xz)
   - [Ubuntu 18.04](https://www.coppeliarobotics.com/files/CoppeliaSim_Edu_V4_1_0_Ubuntu18_04.tar.xz)
   - [Ubuntu 20.04](https://www.coppeliarobotics.com/files/CoppeliaSim_Edu_V4_1_0_Ubuntu20_04.tar.xz)
-
 
   Add the following to your *~/.bashrc* file: (__NOTE__: the 'EDIT ME' in the first line)
 
