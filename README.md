@@ -32,12 +32,6 @@ git submodule update --remote --merge
   - [Ubuntu 18.04](https://www.coppeliarobotics.com/files/CoppeliaSim_Edu_V4_1_0_Ubuntu18_04.tar.xz)
   - [Ubuntu 20.04](https://www.coppeliarobotics.com/files/CoppeliaSim_Edu_V4_1_0_Ubuntu20_04.tar.xz)
 
-  Once you have downloaded CoppeliaSim, you can pull PyRep from git:
-
-  ```bash
-  git clone https://github.com/stepjam/PyRep.git
-  cd PyRep
-  ```
 
   Add the following to your *~/.bashrc* file: (__NOTE__: the 'EDIT ME' in the first line)
 
@@ -53,17 +47,10 @@ git submodule update --remote --merge
   Finally install the python library:
 
   ```bash
+  cd backend/PyRep
   pip3 install -r requirements.txt
-  pip3 install .
-  ```
-
-  If you want to use the developer mode, instead of `pip3 install .` you can run:
-  ```bash
   pip3 install -e .
   ```
-
-  You should be good to go!
-  Try running one of the examples in the *examples/* folder.
 
   _Although you can use CoppeliaSim on any platform, communication via PyRep is currently only supported on Linux._
 
@@ -73,20 +60,8 @@ git submodule update --remote --merge
   Hopefully you have now installed PyRep and have run one of the PyRep examples.
   Now lets install RLBench:
 
-  ```bash
-  pip install -r requirements.txt
-  pip install .
-  ```
-
   I used pip3 instead of pip:
   ```bash
   pip3 install -r requirements.txt
-  pip3 install .
-  ```
-
-  And that's it!
-
-  If you want to use the developer mode, instead of `pip3 install .` you can run:
-  ```bash
   pip3 install -e .
   ```
