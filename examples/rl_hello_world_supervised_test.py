@@ -32,7 +32,8 @@ CURRENT_DIR = dirname(abspath(__file__))
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--trainname", default="supervised_02" ,help="Name of the training")
+parser.add_argument("--trainname", default="supervised_2d_01" ,help="Name of the training")
+parser.add_argument("--dim", type=int, default=1 , choices=[1, 2, 3], help="Define the dimensions of the problem")
 parser.add_argument("--dirsave", default="model_checkpoints" ,help="Dir for saving the models")
 parser.add_argument("--dirsavelog", default="log" ,help="Dir for saving the logs")
 parser.add_argument("--episodenum", type=int, default=10 ,help="Define the number of episodes")
@@ -41,6 +42,9 @@ parser.add_argument("--gpu", type=int, default=0 ,help="Define the GPU number (o
 parser.add_argument("--cpumin", type=int, default=3 ,help="Define the lower value of CPU interval")
 parser.add_argument("--cpumax", type=int, default=7 ,help="Define the upper value of CPU interval")
 args = parser.parse_args()
+
+boundary_mins = [0.1, -0.2, 0.76]
+boundary_maxs = [0.35, 0.2 , 0.96]
 
 #############################################################################
 # For compute you need to define the GPU and limit the CPU usage #############
@@ -106,10 +110,15 @@ def print_data(observation, reward, done, info):
     print(done)
     print(info)
 
-def get_action(target_pose):
-    return np.concatenate((target_pose, quat_norm, np.array([1])))
+def get_action(target_pose, obs):
+    if args.dim == 3:
+        return np.concatenate((target_pose, quat_norm, np.array([1])))
+    elif args.dim == 2:
+        return np.concatenate((target_pose, np.array([obs[2]]) , quat_norm, np.array([1])))
+    elif args.dim == 1:
+        return np.concatenate((target_pose, np.array(obs[1:3]) , quat_norm, np.array([1])))
 
-policy = Policy()
+policy = Policy(state_size=args.dim, action_size=args.dim,boundary_mins=boundary_mins, boundary_maxs=boundary_maxs)
 model_path = args.dirsave + "/" + args.trainname
 policy.load_state_dict(torch.load(model_path))
 policy.to(device)
@@ -124,15 +133,15 @@ with torch.no_grad():
 
         task_env.reset()
         observation = task_env.get_observation()
-        inputs = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
-        labels = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
+        inputs = torch.from_numpy(observation.task_low_dim_state[:args.dim].astype(np.float32)).to(device)
+        labels = torch.from_numpy(observation.task_low_dim_state[:args.dim].astype(np.float32)).to(device)
 
         outputs = policy(inputs)
 
         loss = loss_fn(outputs, labels)
         loss_list.append(loss.item())
 
-        action = get_action(outputs.clone().cpu().detach().numpy().flatten())
+        action = get_action(outputs.clone().cpu().detach().numpy().flatten(),observation.task_low_dim_state)
         print(action)
         observation, reward, done, info = task_env.step(action)
 

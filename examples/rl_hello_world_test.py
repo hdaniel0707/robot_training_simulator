@@ -20,27 +20,31 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
+torch.manual_seed(0)
+
+from REINFORCE_Policy_dist import Policy
 
 from tqdm import tqdm
 import time
-
-torch.manual_seed(0)
-
-from REINFORCE_Policy import Policy
 
 CURRENT_DIR = dirname(abspath(__file__))
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--trainname", default="supervised_2d_01" ,help="Name of the training")
+parser.add_argument("--trainname", default="rl_reinforce_01" ,help="Name of the training")
+parser.add_argument("--dim", type=int, default=1 , choices=[1, 2, 3], help="Define the dimensions of the problem")
 parser.add_argument("--dirsave", default="model_checkpoints" ,help="Dir for saving the models")
 parser.add_argument("--dirsavelog", default="log" ,help="Dir for saving the logs")
-parser.add_argument("--episodenum", type=int, default=10 ,help="Define the number of episodes")
+parser.add_argument("--iternum", type=int, default=20 ,help="Define the number of iterations")
+parser.add_argument("--batchsize", type=int, default=100 ,help="Define the number of iterations")
 parser.add_argument("--maxt", type=int, default=1 ,help="Define the horizon of an episode")
 parser.add_argument("--gpu", type=int, default=0 ,help="Define the GPU number (only one)")
 parser.add_argument("--cpumin", type=int, default=3 ,help="Define the lower value of CPU interval")
 parser.add_argument("--cpumax", type=int, default=7 ,help="Define the upper value of CPU interval")
 args = parser.parse_args()
+
+boundary_mins = [0.1, -0.2, 0.76]
+boundary_maxs = [0.35, 0.2 , 0.96]
 
 #############################################################################
 # For compute you need to define the GPU and limit the CPU usage #############
@@ -97,6 +101,8 @@ print(task_env.get_name())
 quat = np.array([0,1,0,0])
 quat_norm = quat / np.linalg.norm(quat)
 
+#action = np.array([0.3,-0.1,1.0,quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1])
+
 def print_data(observation, reward, done, info):
     print("----------------------------------")
     print(observation)
@@ -106,37 +112,47 @@ def print_data(observation, reward, done, info):
     print(done)
     print(info)
 
-def get_action(target_pose, z):
-    return np.concatenate((target_pose, np.array([z]) ,quat_norm, np.array([1])))
+def action_to_action_robot(action, obs ):
+    action_np = action.clone().cpu().detach().numpy().flatten()
+    #print(action_np)
+    action_np_clipped = np.clip(action_np, boundary_mins[:args.dim], boundary_maxs[:args.dim])
+    if args.dim == 3:
+        return np.concatenate((action_np_clipped, quat_norm, np.array([1])))
+    elif args.dim == 2:
+        return np.concatenate((action_np_clipped, np.array([obs[2]]) , quat_norm, np.array([1])))
+    elif args.dim == 1:
+        return np.concatenate((action_np_clipped, np.array(obs[1:3]) , quat_norm, np.array([1])))
 
-policy = Policy(state_size=2, action_size=2)
+policy = Policy(state_size=args.dim, action_size=args.dim, boundary_mins=boundary_mins, boundary_maxs=boundary_maxs)
 model_path = args.dirsave + "/" + args.trainname
 policy.load_state_dict(torch.load(model_path))
 policy.to(device)
 print(policy.eval())
 
 loss_fn = torch.nn.MSELoss()
-loss_list = []
+
+rewards = []
+succes_num = 0.0
 
 policy.train(False)
 with torch.no_grad():
-    for i in range(args.episodenum):
+    for i in range(args.iternum):
 
         task_env.reset()
         observation = task_env.get_observation()
-        inputs = torch.from_numpy(observation.task_low_dim_state[:2].astype(np.float32)).to(device)
-        labels = torch.from_numpy(observation.task_low_dim_state[:2].astype(np.float32)).to(device)
 
-        outputs = policy(inputs)
+        state = torch.from_numpy(observation.task_low_dim_state[:args.dim].astype(np.float32)).to(device)
 
-        loss = loss_fn(outputs, labels)
-        loss_list.append(loss.item())
+        pi = policy(state)
+        action = pi.sample()
+        action_robot = action_to_action_robot(action, observation.task_low_dim_state)
+        observation, reward, done, info = task_env.step(action_robot)
+        if reward == 1.0:
+            succes_num+=1
+        rewards.append(reward)
 
-        action = get_action(outputs.clone().cpu().detach().numpy().flatten(),observation.task_low_dim_state[2])
-        print(action)
-        observation, reward, done, info = task_env.step(action)
-
-logpath = args.dirsavelog + "/" + args.trainname + "_test_loss"
-np.save(logpath,np.asarray(loss_list))
+print("+++++++++++++++++++++++++++++++++++++++++++++++++++")
+print(rewards)
+print("Success rate: ", (succes_num/args.iternum)*100.0,"%")
 
 env.shutdown()

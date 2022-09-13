@@ -11,17 +11,19 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class Policy(nn.Module):
-    def __init__(self, state_size=3, action_size=3, hidden_size=32):
+    def __init__(self, state_size=3, action_size=3, hidden_size=32, boundary_mins=[0.1, -0.2, 0.76], boundary_maxs=[0.35, 0.2 , 0.96]):
         super(Policy, self).__init__()
         self.fc1 = nn.Linear(state_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, action_size)
 
-        if action_size == 3:
-            self._center = torch.tensor([0.25,0.0,1.002], dtype=torch.float32, device=device)
-            self._scale = torch.tensor([0.25,0.35,0.25], dtype=torch.float32, device=device)
-        if action_size == 2:
-            self._center = torch.tensor([0.25,0.0], dtype=torch.float32, device=device)
-            self._scale = torch.tensor([0.25,0.35], dtype=torch.float32, device=device)
+        boundary_center = [ (boundary_maxs[i] + boundary_mins[i])/2.0 for i in range (len (boundary_maxs))]
+        boundary_scale = [ (boundary_maxs[i] - boundary_mins[i])/2.0 for i in range (len (boundary_maxs))]
+
+        print(boundary_center)
+        print(boundary_scale)
+
+        self._center = torch.tensor(boundary_center[:action_size], dtype=torch.float32, requires_grad=False,device=device)
+        self._scale = torch.tensor(boundary_scale[:action_size], dtype=torch.float32, requires_grad=False,device=device)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))

@@ -32,15 +32,19 @@ CURRENT_DIR = dirname(abspath(__file__))
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--trainname", default="supervised_xx" ,help="Name of the training")
+parser.add_argument("--trainname", default="supervised_2d_01" ,help="Name of the training")
+parser.add_argument("--dim", type=int, default=1 , choices=[1, 2, 3], help="Define the dimensions of the problem")
 parser.add_argument("--dirsave", default="model_checkpoints" ,help="Dir for saving the models")
 parser.add_argument("--dirsavelog", default="log" ,help="Dir for saving the logs")
-parser.add_argument("--episodenum", type=int, default=100 ,help="Define the number of episodes")
+parser.add_argument("--episodenum", type=int, default=1000 ,help="Define the number of episodes")
 parser.add_argument("--maxt", type=int, default=1 ,help="Define the horizon of an episode")
 parser.add_argument("--gpu", type=int, default=0 ,help="Define the GPU number (only one)")
 parser.add_argument("--cpumin", type=int, default=3 ,help="Define the lower value of CPU interval")
 parser.add_argument("--cpumax", type=int, default=7 ,help="Define the upper value of CPU interval")
 args = parser.parse_args()
+
+boundary_mins = [0.1, -0.2, 0.76]
+boundary_maxs = [0.35, 0.2 , 0.96]
 
 #############################################################################
 # For compute you need to define the GPU and limit the CPU usage #############
@@ -63,9 +67,6 @@ if torch.cuda.is_available():
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-
-
-
 cam_config = CameraConfig(rgb=True, depth=False, mask=False,
                           render_mode=RenderMode.OPENGL)
 obs_config = ObservationConfig()
@@ -78,15 +79,11 @@ obs_config.left_shoulder_camera = cam_config
 obs_config.wrist_camera = cam_config
 obs_config.front_camera = cam_config
 
-
-
-
 arm_action_mode = EndEffectorPoseViaPlanning()
 gripper_action_mode = Discrete()
 
 act_mode = MoveArmThenGripper(arm_action_mode,gripper_action_mode)
 
-#env = Environment(action_mode = act_mode, obs_config= obs_config,robot_setup = 'ur5baxter2')
 env = Environment(action_mode = act_mode, obs_config= obs_config, headless = True, robot_setup = 'ur3baxter')
 
 env.launch()
@@ -112,13 +109,13 @@ def print_data(observation, reward, done, info):
     print(done)
     print(info)
 
-def get_action(target_pose):
-    return np.concatenate((target_pose, quat_norm, np.array([1])))
+# def get_action(target_pose):
+#     return np.concatenate((target_pose, quat_norm, np.array([1])))
 
 ##########################
 #TRAIN
 
-policy = Policy().to(device)
+policy = Policy(state_size=args.dim, action_size=args.dim,boundary_mins=boundary_mins, boundary_maxs=boundary_maxs).to(device)
 optimizer = optim.Adam(policy.parameters(), lr=1e-2)
 loss_fn = torch.nn.MSELoss()
 loss_list = []
@@ -129,8 +126,8 @@ for i in tqdm(range(args.episodenum), desc ="Epochs: "):
 
     for j in range(args.maxt):
 
-        inputs = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
-        labels = torch.from_numpy(observation.task_low_dim_state.astype(np.float32)).to(device)
+        inputs = torch.from_numpy(observation.task_low_dim_state[:args.dim].astype(np.float32)).to(device)
+        labels = torch.from_numpy(observation.task_low_dim_state[:args.dim].astype(np.float32)).to(device)
 
         # Zero your gradients for every batch!
         optimizer.zero_grad()

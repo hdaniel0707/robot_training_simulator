@@ -33,13 +33,8 @@ obs_config.left_shoulder_camera = cam_config
 obs_config.wrist_camera = cam_config
 obs_config.front_camera = cam_config
 
-
-#arm_action_mode = ArmActionMode()
-#joint_action_mode = JointPosition()
-#arm_action_mode = EndEffectorPoseViaPlanning(frame = 'end effector')
 arm_action_mode = EndEffectorPoseViaPlanning()
-#arm_action_mode = EndEffectorPoseViaIK()
-#gripper_action_mode = GripperActionMode()
+
 gripper_action_mode = Discrete()
 
 act_mode = MoveArmThenGripper(arm_action_mode,gripper_action_mode)
@@ -62,8 +57,8 @@ print(obs_init)
 quat = np.array([0,1,0,0])
 quat_norm = quat / np.linalg.norm(quat)
 
-boundary_mins = [0.1, -0.2, 0.8]
-boundary_maxs = [0.3, 0.2 , 0.95]
+boundary_mins = [0.1, -0.2, 0.76]
+boundary_maxs = [0.35, 0.2 , 0.96]
 
 action_list = []
 action_list.append(np.array([boundary_mins[0],boundary_mins[1],boundary_mins[2],quat_norm[0],quat_norm[1],quat_norm[2],quat_norm[3],1]))
