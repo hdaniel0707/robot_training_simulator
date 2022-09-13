@@ -62,6 +62,7 @@ git submodule update --remote --merge
 
   I used pip3 instead of pip:
   ```bash
+  cd backend/RLBench
   pip3 install -r requirements.txt
   pip3 install -e .
   ```
